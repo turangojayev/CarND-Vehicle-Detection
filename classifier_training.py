@@ -10,6 +10,9 @@ from sklearn.metrics.classification import classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing.data import StandardScaler
+from sklearn.svm import LinearSVC
+
+from lesson_functions import color_hist, bin_spatial
 
 
 def get_data():
@@ -36,56 +39,86 @@ def get_hog_features(img, orient, pix_per_cell, cell_per_block, vis=False, featu
         return features
 
 
-def preprocess(image, vectorize=True):
-    # gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    # gray = contrast_normalization(gray)
-    # image = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
-    # image = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
-    # image = cv2.cvtColor(image, cv2.COLOR_RGB2LUV)
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb)
+# def preprocess(image, vectorize=True):
+#     # gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+#     # gray = contrast_normalization(gray)
+#     # image = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
+#     # image = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
+#     # image = cv2.cvtColor(image, cv2.COLOR_RGB2LUV)
+#     image = cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb)
+#     orient = 9
+#     pix_per_cell = 8
+#     cell_per_block = 2
+#     features = []
+#     # for channel in range(image.shape[2]):
+#     features.append(
+#         get_hog_features(
+#             image[:, :, 0],
+#             orient,
+#             pix_per_cell,
+#             cell_per_block,
+#             vis=False,
+#             feature_vec=vectorize))
+#     if vectorize:
+#         return numpy.concatenate(features)
+#     else:
+#         return features
+
+def preprocess(image, vectorize=True, training=True):
+    # for_hog = cv2.cvtColor(image, cv2.COLOR_RGB2LUV)
+    # for_hog = cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb)
+    for_hog = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     orient = 9
     pix_per_cell = 8
     cell_per_block = 2
-    features = []
-    # for channel in range(image.shape[2]):
-    features.append(
-        get_hog_features(
-            image[:, :, 0],
-            orient,
-            pix_per_cell,
-            cell_per_block,
-            vis=False,
-            feature_vec=vectorize))
-    if vectorize:
-        return numpy.concatenate(features)
+
+    hog = get_hog_features(
+        # for_hog[:, :, 0],
+        for_hog,
+        orient,
+        pix_per_cell,
+        cell_per_block,
+        vis=False,
+        feature_vec=vectorize)
+
+    if training:
+        hlsed = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
+        hist_features = color_hist(hlsed, nbins=32)
+        spatial_features = bin_spatial(hlsed, (16, 16))
+        return numpy.concatenate((hog, hist_features, spatial_features))
+        # return numpy.concatenate((hog, hist_features))
     else:
-        return features
-
-
-# def train(X, y):
-#     random_state = 1234
-#     X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, train_size=0.8, random_state=random_state)
-#     print('starting preprocessing')
-#     X_train = numpy.array(list(map(preprocess, X_train)))
-#     X_test = numpy.array(list(map(preprocess, X_test)))
-#     print(X_train.shape)
-#     pipeline = make_pipeline(
-#         # PCA(n_components=200, whiten=True),
-#         StandardScaler(),
-#         LogisticRegression(C=0.001, n_jobs=-1, class_weight={0: 5, 1: 1})
-#     )
-#
-#     pipeline.fit(X_train, y_train)
-#     print(classification_report(y_test, pipeline.predict(X_test)))
-#     return pipeline
+        return hog
 
 
 def train(X, y):
+    random_state = numpy.random.randint(0, 100000, 1)[0]
+    X = numpy.array(list(map(preprocess, X)))
+    X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, train_size=0.8, random_state=random_state)
+    print(X_train.shape)
+
+    pipeline = make_pipeline(
+        # PCA(n_components=500, whiten=True),
+        StandardScaler(),
+        # LogisticRegression(C=0.001, n_jobs=-1, class_weight={0: 10, 1: 1})
+        LinearSVC(C=0.001, class_weight={0: 10, 1: 1})
+        # LinearSVC()
+    )
+
+    pipeline.fit(X_train, y_train)
+    print(classification_report(y_test, pipeline.predict(X_test)))
+    pipeline.fit(X, y)
+    return pipeline
+
+
+def train2(X, y):
     X = numpy.array(list(map(preprocess, X)))
     pipeline = make_pipeline(
-        # PCA(n_components=200, whiten=True),
+        # PCA(n_components=500, whiten=True),
         StandardScaler(),
-        LogisticRegression(C=0.001, n_jobs=-1, class_weight={0: 5, 1: 1})
+        # LogisticRegression(C=0.001, n_jobs=-1, class_weight={0: 5, 1: 1})
+        # LinearSVC(C=0.01, class_weight={0: 10, 1: 1})
+        LinearSVC(C=0.01, class_weight={0: 10, 1: 1})
     )
 
     pipeline.fit(X, y)
@@ -177,24 +210,26 @@ if __name__ == '__main__':
 
     image = X[12234]
 
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb)
-    orient = 8
-    pix_per_cell = 8
-    cell_per_block = 2
-    print(image.max())
-    features, hog_image = get_hog_features(image[:, :, 0], orient,
-                                           pix_per_cell, cell_per_block,
-                                           vis=True, feature_vec=False)
-
-    # Plot the examples
-    fig = plt.figure()
-    plt.subplot(121)
-    plt.imshow(image, cmap='gray')
-    plt.title('Example Car Image')
-    plt.subplot(122)
-    plt.imshow(hog_image, cmap='gray')
-    plt.title('HOG Visualization')
-    plt.show()
+    # image = cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb)
+    # image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    # orient = 8
+    # pix_per_cell = 8
+    # cell_per_block = 2
+    # print(image.max())
+    # # features, hog_image = get_hog_features(image[:, :, 0], orient,
+    # features, hog_image = get_hog_features(image, orient,
+    #                                        pix_per_cell, cell_per_block,
+    #                                        vis=True, feature_vec=False)
+    #
+    # # Plot the examples
+    # fig = plt.figure()
+    # plt.subplot(121)
+    # plt.imshow(image, cmap='gray')
+    # plt.title('Example Car Image')
+    # plt.subplot(122)
+    # plt.imshow(hog_image, cmap='gray')
+    # plt.title('HOG Visualization')
+    # plt.show()
 
     # image = cv2.cvtColor(cv2.imread('test_images/test1.jpg'), cv2.COLOR_BGR2RGB)
     # draw_image = numpy.copy(image)
