@@ -158,7 +158,8 @@ def find_cars(image, search_param):
     nysteps = (nyblocks - nblocks_per_window) // search_param.vertical_step
 
     # hog, hlsed = preprocess(ctrans_tosearch, False, False)
-    hog = preprocess(ctrans_tosearch, False, False)
+    # hog = preprocess(ctrans_tosearch, False, False)
+    hog1, hog2, hlsed = preprocess(ctrans_tosearch, False, False)
     xpositions = []
     ypositions = []
     samples = []
@@ -166,15 +167,21 @@ def find_cars(image, search_param):
         for yb in range(nysteps):
             # if numpy.random.uniform() > 0.5:
             ypos = yb * search_param.vertical_step
-            xpos = xb * search_param.horizontal_step
-            hog_features = hog[ypos:ypos + nblocks_per_window, xpos:xpos + nblocks_per_window].ravel()
-            # xleft = xpos * training_pixels_per_cell
-            # ytop = ypos * training_pixels_per_cell
+            # r = numpy.random.randint(0, 2)
+            xpos = xb * search_param.horizontal_step  # + r
+            # hog_features = hog[ypos:ypos + nblocks_per_window, xpos:xpos + nblocks_per_window].ravel()
+            hog_features = numpy.concatenate((
+                hog1[ypos:ypos + nblocks_per_window, xpos:xpos + nblocks_per_window].ravel(),
+                hog2[ypos:ypos + nblocks_per_window, xpos:xpos + nblocks_per_window].ravel()))
+            xleft = xpos * training_pixels_per_cell
+            ytop = ypos * training_pixels_per_cell
             # subimg = cv2.resize(ctrans_tosearch[ytop:ytop + window, xleft:xleft + window], (64, 64))
+            subimg = cv2.resize(hlsed[ytop:ytop + window, xleft:xleft + window], (64, 64))
             # spatial_features = bin_spatial(subimg, size=spatial_bin_shape)
-            # hist_features = color_hist(subimg, nbins=color_histogram_bins)
+            hist_features = color_hist(subimg, nbins=color_histogram_bins)
             # features = concatenate((hog_features, hist_features, spatial_features))
-            features = hog_features
+            # features = hog_features
+            features = numpy.concatenate((hog_features, hist_features))
             samples.append(features)
             xpositions.append(xpos)
             ypositions.append(ypos)
@@ -225,10 +232,13 @@ def _draw_labeled_bboxes(image, labels):
 
 search_parameter = namedtuple('parameter', ['scale', 'horizontal_step', 'vertical_step', 'ystart', 'ystop'])
 
+# search_params = [
+#     search_parameter(1.5, 4, 2, 400, 656),
+#     search_parameter(2, 4, 2, 400, 656),
+# ]
+
 search_params = [
-    # search_parameter(0.8, 4, 2, 400, 592),
-    # search_parameter(1, 2, 2, 400, 480),  # not bad
-    search_parameter(1.5, 2, 2, 400, 656),  # not bad
+    search_parameter(1.5, 2, 2, 400, 656),
     search_parameter(2, 2, 2, 400, 656),
 ]
 
@@ -238,11 +248,18 @@ class Pipeline:
         self._camera_matrix, self._distortion_coefs = get_calibration_results()
         self._vehicle_model = vehicle_classifier
         self._debug = debug
-        self._windows = numpy.zeros(shape=438)
+        # self._windows = numpy.zeros(shape=438)
+        # self._windows = numpy.zeros(shape=216)
+        # self._windows = numpy.zeros(shape=288)
+        self._windows = numpy.zeros(shape=192)
+        # self._windows = deque(maxlen=5)
         # self._windows = numpy.zeros(shape=294)
+        # self._heat = numpy.zeros(shape=(720, 1280))
+        self._heat = deque(maxlen=10)
 
     def __call__(self, image, **kwargs):
-        undistorted = undistort(image, self._camera_matrix, self._distortion_coefs, None, None)
+        # undistorted = undistort(image, self._camera_matrix, self._distortion_coefs, None, None)
+        undistorted = image
         all_samples = []
         all_boxes = []
         for search_param in search_params:
@@ -258,15 +275,14 @@ class Pipeline:
                 undistorted = cv2.rectangle(undistorted, tuple(box[0]), tuple(box[1]), (0, 0, 255), 6)
             return undistorted
 
-        # predictions = self._vehicle_model.predict(all_samples)
-        # indices = predictions == 1
+        predictions = self._vehicle_model.predict(all_samples)
+        indices = predictions == 1
 
         scores = self._vehicle_model.decision_function(all_samples)
-        # print('scores', scores.min(), scores.max())
+        print(scores.max())
         # if any(scores > 0):
-        self._windows = 0.7 * self._windows + 0.3 * scores
-        # print('windows', self._windows.min(), self._windows.max())
-        indices = self._windows > 0
+        #     self._windows = 0.7 * self._windows + 0.3 * scores
+        # indices = self._windows > 0
         all_boxes = array(all_boxes)
         boxes = all_boxes[indices]
 
@@ -279,10 +295,15 @@ class Pipeline:
             return undistorted
 
         heat = numpy.zeros(image.shape[:2])
-        heat = add_heat(heat, boxes, scores[indices])
-        # heat = add_heat(heat, boxes)
-        heat = apply_threshold(heat, 0.5)
+        # heat = add_heat(heat, boxes, self._windows[indices])
+        heat = add_heat(heat, boxes)
+        # self._heat = 0.5 * self._heat + 0.5 * heat
+        self._heat.append(heat)
+        # heat = apply_threshold(heat, 0)
+        # self._heat = apply_threshold(self._heat, 0.5)
+        heat = apply_threshold(numpy.mean(self._heat, axis=0), 0.6)
         labels = label(heat)
+        # labels = label(self._heat)
         main_track = _draw_labeled_bboxes(undistorted, labels)
         return main_track
 
@@ -298,8 +319,8 @@ def _distance(p1, p2):
 
 
 if __name__ == '__main__':
-    process_and_save_video('test_video.mp4', 'test_output-new.mp4',
-                           Pipeline(vehicle_classifier=pickle.load(open('pipeline.pkl', 'rb'))))
+    # process_and_save_video('test_video.mp4', 'test_output-new.mp4',
+    #                        Pipeline(vehicle_classifier=pickle.load(open('pipeline.pkl', 'rb'))))
     #
     process_and_save_video('project_video.mp4', 'project_output-new.mp4',
                            Pipeline(vehicle_classifier=pickle.load(open('pipeline.pkl', 'rb'))))

@@ -59,13 +59,13 @@ def get_hog_features(img, orient, pix_per_cell, cell_per_block, vis=False, featu
 
 
 def preprocess(image, vectorize=True, training=True):
-    # hlsed = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
+    hlsed = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
     # yuv = cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
     # gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     # luv = cv2.cvtColor(image, cv2.COLOR_RGB2LUV)
     ycrcb = cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb)
 
-    hog = get_hog_features(
+    hog1 = get_hog_features(
         # luv[:, :, 0],
         # yuv[:, :, 0],
         # hlsed[:, :, 2],
@@ -77,14 +77,28 @@ def preprocess(image, vectorize=True, training=True):
         vis=False,
         feature_vec=vectorize)
 
+    hog2 = get_hog_features(
+        # luv[:, :, 0],
+        # yuv[:, :, 0],
+        # hlsed[:, :, 2],
+        ycrcb[:, :, 1],
+        # gray,
+        orient,
+        training_pixels_per_cell,
+        cells_per_block,
+        vis=False,
+        feature_vec=vectorize)
+
     if training:
-        # hist_features = color_hist(hlsed, nbins=color_histogram_bins)
+        hist_features = color_hist(hlsed, nbins=color_histogram_bins)
         # spatial_features = bin_spatial(hlsed, spatial_bin_shape)
         # return numpy.concatenate((hog, hist_features, spatial_features))
-        return hog
+        # return hog
+        return numpy.concatenate((hog1, hog2, hist_features))
     else:
         # return hog, hlsed
-        return hog
+        # return hog
+        return hog1, hog2, hlsed
 
 
 def train(X, y):
