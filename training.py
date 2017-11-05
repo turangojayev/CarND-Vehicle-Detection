@@ -13,10 +13,10 @@ from sklearn.svm import LinearSVC
 from lesson_functions import color_hist, bin_spatial
 
 resize = cv2.resize
-training_pixels_per_cell = 16
+training_pixels_per_cell = 8
 original_size = 64
 cells_per_block = 2
-orient = 12
+orient = 9
 color_histogram_bins = 32
 spatial_bin_shape = (16, 16)
 
@@ -26,6 +26,10 @@ def get_data():
     notcars = glob.glob('data/non-vehicles/*/*.png')
 
     paths = numpy.concatenate((notcars, cars))
+    # X = numpy.array(
+    #     list(map(lambda x: cv2.cvtColor(cv2.imread(x), cv2.COLOR_BGR2RGB)
+    #     if 'Left' not in x else cv2.flip(cv2.cvtColor(cv2.imread(x), cv2.COLOR_BGR2RGB), flipCode=1), paths)))
+
     X = numpy.array(list(map(lambda x: cv2.cvtColor(cv2.imread(x), cv2.COLOR_BGR2RGB), paths)))
     y = numpy.array(([0] * len(notcars) + [1] * len(cars)))
     print(X.shape, y.shape)
@@ -55,11 +59,18 @@ def get_hog_features(img, orient, pix_per_cell, cell_per_block, vis=False, featu
 
 
 def preprocess(image, vectorize=True, training=True):
-    hlsed = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    # hlsed = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
+    # yuv = cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
+    # gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    # luv = cv2.cvtColor(image, cv2.COLOR_RGB2LUV)
+    ycrcb = cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb)
 
     hog = get_hog_features(
-        gray,
+        # luv[:, :, 0],
+        # yuv[:, :, 0],
+        # hlsed[:, :, 2],
+        ycrcb[:, :, 0],
+        # gray,
         orient,
         training_pixels_per_cell,
         cells_per_block,
@@ -67,11 +78,13 @@ def preprocess(image, vectorize=True, training=True):
         feature_vec=vectorize)
 
     if training:
-        hist_features = color_hist(hlsed, nbins=color_histogram_bins)
-        spatial_features = bin_spatial(hlsed, spatial_bin_shape)
-        return numpy.concatenate((hog, hist_features, spatial_features))
+        # hist_features = color_hist(hlsed, nbins=color_histogram_bins)
+        # spatial_features = bin_spatial(hlsed, spatial_bin_shape)
+        # return numpy.concatenate((hog, hist_features, spatial_features))
+        return hog
     else:
-        return hog, hlsed
+        # return hog, hlsed
+        return hog
 
 
 def train(X, y):
@@ -82,7 +95,8 @@ def train(X, y):
 
     pipeline = make_pipeline(
         StandardScaler(),
-        LinearSVC(C=0.01, class_weight={0: 3, 1: 1})
+        # LinearSVC(C=0.01, class_weight={0: 3, 1: 1})
+        LinearSVC(C=0.01, class_weight={0: 10, 1: 1})
     )
 
     pipeline.fit(X_train, y_train)
