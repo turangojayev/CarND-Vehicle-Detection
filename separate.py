@@ -85,62 +85,6 @@ def convert_if_needed(image):
 convert_color = cv2.cvtColor
 
 
-def _create_samples(image, search_params, num_features):
-    ystart = min([param.ystart for param in search_params])
-    ystop = max([param.ystop for param in search_params])
-    cropped = image[ystart:ystop, :, :]
-    hog, hlsed = preprocess(cropped, vectorize=False, training=False)
-    all_boxes = []
-    samples = []
-    # for scale, cells_per_step in scale2cells_per_step.items():
-    for params in search_params:
-        # samples_for_scale, boxes = _get_input_for_scale(scale, cropped, cells_per_step, hog, hlsed, ystart)
-        samples_for_scale, boxes = _get_input_for_scale(cropped, hog, hlsed, params, num_features)
-        # samples_for_scale, boxes = _get_randomized_input(cropped, hog, hlsed, params, num_features)
-        samples.extend(samples_for_scale)
-        all_boxes.extend(boxes)
-
-    return samples, all_boxes
-
-
-def _get_input_for_scale(image, hog, hlsed, params, num_features):
-    window = int(original_size * params.scale)
-    pixels_per_cell = int(training_pixels_per_cell * params.scale)
-    num_horizontal_blocks = (image.shape[1] // pixels_per_cell) - cells_per_block + 1
-    num_vertical_blocks = ((params.ystop - params.ystart) // pixels_per_cell) - cells_per_block + 1
-    num_blocks_per_window = (window // pixels_per_cell) - cells_per_block + 1
-    num_horizontal_steps = (num_horizontal_blocks - num_blocks_per_window) // params.horizontal_step
-    num_vertical_steps = (num_vertical_blocks - num_blocks_per_window) // params.vertical_step
-
-    xpositions = []
-    ypositions = []
-    samples = []
-    for horizontal_idx in range(num_horizontal_steps):
-        for vertical_idx in range(num_vertical_steps):
-            # if numpy.random.uniform()> 0.4:
-            ypos = vertical_idx * params.vertical_step
-            xpos = horizontal_idx * params.horizontal_step
-            hog_features = hog[ypos:ypos + num_blocks_per_window, xpos:xpos + num_blocks_per_window].ravel()
-            xleft = xpos * pixels_per_cell
-            ytop = ypos * pixels_per_cell
-            hls = resize(hlsed[ytop:ytop + window, xleft:xleft + window], (original_size, original_size))
-            features = concatenate((hog_features,
-                                    color_hist(hls, nbins=color_histogram_bins),
-                                    bin_spatial(hls, spatial_bin_shape)))
-            if len(features) == num_features:
-                samples.append(features)
-                xpositions.append(xpos)
-                ypositions.append(ypos)
-
-    xleft = (array(xpositions) * pixels_per_cell).astype(numpy.int32)
-    ytop = (array(ypositions) * pixels_per_cell).astype(numpy.int32)
-    boxes = [((xleft, yleft), (xright, yright))
-             for xleft, yleft, xright, yright
-             in zip(xleft, ytop + params.ystart, xleft + window, ytop + window + params.ystart)]
-
-    return samples, boxes
-
-
 def find_cars(image, search_param):
     img_tosearch = image[search_param.ystart:search_param.ystop, :, :]
     ctrans_tosearch = img_tosearch
@@ -232,11 +176,6 @@ def _draw_labeled_bboxes(image, labels):
 
 search_parameter = namedtuple('parameter', ['scale', 'horizontal_step', 'vertical_step', 'ystart', 'ystop'])
 
-# search_params = [
-#     search_parameter(1.5, 4, 2, 400, 656),
-#     search_parameter(2, 4, 2, 400, 656),
-# ]
-
 search_params = [
     search_parameter(1.5, 2, 2, 400, 656),
     search_parameter(2, 2, 2, 400, 656),
@@ -248,63 +187,46 @@ class Pipeline:
         self._camera_matrix, self._distortion_coefs = get_calibration_results()
         self._vehicle_model = vehicle_classifier
         self._debug = debug
-        # self._windows = numpy.zeros(shape=438)
-        # self._windows = numpy.zeros(shape=216)
-        # self._windows = numpy.zeros(shape=288)
         self._windows = numpy.zeros(shape=192)
-        # self._windows = deque(maxlen=5)
-        # self._windows = numpy.zeros(shape=294)
-        # self._heat = numpy.zeros(shape=(720, 1280))
         self._heat = deque(maxlen=10)
 
     def __call__(self, image, **kwargs):
-        # undistorted = undistort(image, self._camera_matrix, self._distortion_coefs, None, None)
-        undistorted = image
         all_samples = []
         all_boxes = []
         for search_param in search_params:
-            samples, boxes = find_cars(undistorted, search_param)
+            samples, boxes = find_cars(image, search_param)
             all_samples.extend(samples)
             all_boxes.extend(boxes)
 
-        # for box in all_boxes:
-        #     undistorted = cv2.rectangle(undistorted, tuple(box[0]), tuple(box[1]), (0, 0, 255), 6)
+        for box in all_boxes:
+            image = cv2.rectangle(image, tuple(box[0]), tuple(box[1]), (0, 0, 255), 6)
 
         if self._debug == ALL_BOXES:
             for box in all_boxes:
-                undistorted = cv2.rectangle(undistorted, tuple(box[0]), tuple(box[1]), (0, 0, 255), 6)
-            return undistorted
+                image = cv2.rectangle(image, tuple(box[0]), tuple(box[1]), (0, 0, 255), 6)
+            return image
 
         predictions = self._vehicle_model.predict(all_samples)
         indices = predictions == 1
 
         scores = self._vehicle_model.decision_function(all_samples)
-        print(scores.max())
-        # if any(scores > 0):
-        #     self._windows = 0.7 * self._windows + 0.3 * scores
-        # indices = self._windows > 0
         all_boxes = array(all_boxes)
         boxes = all_boxes[indices]
 
-        # for box in boxes:
-        #     undistorted = cv2.rectangle(undistorted, tuple(box[0]), tuple(box[1]), (0, 255, 0), 6)
+        for box in boxes:
+            image = cv2.rectangle(image, tuple(box[0]), tuple(box[1]), (0, 255, 0), 6)
 
         if self._debug == BOXES_WITH_CARS:
             for box in boxes:
-                undistorted = cv2.rectangle(undistorted, tuple(box[0]), tuple(box[1]), (255, 0, 0), 6)
-            return undistorted
+                image = cv2.rectangle(image, tuple(box[0]), tuple(box[1]), (255, 0, 0), 6)
+            return image
 
         heat = numpy.zeros(image.shape[:2])
-        # heat = add_heat(heat, boxes, self._windows[indices])
         heat = add_heat(heat, boxes)
-        # self._heat = 0.5 * self._heat + 0.5 * heat
         self._heat.append(heat)
-        # heat = apply_threshold(heat, 0)
-        # self._heat = apply_threshold(self._heat, 0.5)
         heat = apply_threshold(numpy.mean(self._heat, axis=0), 0.6)
         labels = label(heat)
-        # labels = label(self._heat)
-        main_track = _draw_labeled_bboxes(undistorted, labels)
+        main_track = _draw_labeled_bboxes(image, labels)
         return main_track
 
 
