@@ -236,20 +236,6 @@ def _draw_polygon(y, left_x, right_x, shape):
     return cv2.fillPoly(color_warp, numpy.int_([pts]), (0, 255, 0))
 
 
-def _draw_lines(warped_binary, y, left_fit, right_fit, nonzeroy, nonzerox, left_indices, right_indices):
-    out = numpy.dstack((warped_binary, warped_binary, warped_binary))
-    out[nonzeroy[left_indices], nonzerox[left_indices]] = [255, 0, 0]
-    out[nonzeroy[right_indices], nonzerox[right_indices]] = [0, 0, 255]
-
-    leftfitx = left_fit.astype(numpy.int32)
-    rightfix = right_fit.astype(numpy.int32)
-    ycoord = y.astype(numpy.int32)
-
-    cv2.polylines(out, array(list(zip(leftfitx, ycoord))).reshape(-1, 1, 2), True, (0, 255, 0), thickness=10)
-    cv2.polylines(out, array(list(zip(rightfix, ycoord))).reshape(-1, 1, 2), True, (0, 255, 0), thickness=10)
-    return out
-
-
 def _put_text(image, distance_from_center, left_coeffs_m, right_coeffs_m):
     left_curverad = (1 + (2 * left_coeffs_m[0] * 720 * ym_per_pix + left_coeffs_m[1]) ** 2) ** 1.5 / \
                     numpy.absolute(2 * left_coeffs_m[0])
@@ -268,59 +254,81 @@ def _put_text(image, distance_from_center, left_coeffs_m, right_coeffs_m):
     return image
 
 
+def _add_rectangles():
+    pass
+
+
+def _add_polygon():
+    pass
+
+
 class Pipeline:
-    def __init__(self, model=None, debug=None):
+    def __init__(self, vehicle_detector, lane_line_detector=None):
         self._camera_matrix, self._distortion_coefs = get_calibration_results()
-        self._binary_model = keras.models.load_model(model, custom_objects={'Upsampling': Upsampling})
+        self._vehicle_detector = vehicle_detector
+        self._lane_line_detector = lane_line_detector
+
+    def __call__(self, image):
+        if self._lane_line_detector is not None:
+            image = undistort(image, self._camera_matrix, self._distortion_coefs, None, None)
+
+        boxes = self._vehicle_detector(image)
+
+        if self._lane_line_detector is not None:
+            fitted_polygon = self._lane_line_detector(image)
+
+
+class LaneLineDetector:
+    def __init__(self):
         self._lines = Lines()
-        self._debug = debug
 
-    def __call__(self, image, **kwargs):
-        undistorted = undistort(image, self._camera_matrix, self._distortion_coefs, None, None)
-        warped = perspective_transform(undistorted, perspective_tr_matrix)
-
-        if self._debug == 'perspective':
-            return warped
-
+    def __call__(self, image):
+        warped = perspective_transform(image, perspective_tr_matrix)
         warped_binary = self._get_thresholded(warped)
-        warped_binary_in_rgb = numpy.dstack((warped_binary, warped_binary, warped_binary)) * 255
-
-        if self._debug == 'warped':
-            return warped_binary_in_rgb
-
-        y, left_fit, right_fit, nonzeroy, nonzerox, left_indices, right_indices = self._lines.get_lines(warped_binary)
-
-        lines_drawn = _draw_lines(warped_binary,
-                                  y,
-                                  left_fit,
-                                  right_fit,
-                                  nonzeroy,
-                                  nonzerox,
-                                  left_indices,
-                                  right_indices)
-
-        if self._debug == 'lines':
-            return lines_drawn
-
+        y, left_fit, right_fit, *_ = self._lines.get_lines(warped_binary)
         polygon_drawn = _draw_polygon(y, left_fit, right_fit, warped_binary.shape)
-
-        if self._debug == 'polygon':
-            return polygon_drawn
-
-        unwarped_polygon = perspective_transform(polygon_drawn, inverse_perspective_tr_matrix)
-        main_track = cv2.addWeighted(undistorted, 1, unwarped_polygon, 0.5, 0)
-        _put_text(main_track, (left_fit[-1] + right_fit[-1]) / 2 - columns / 2,
-                  *self._lines.curve_coefficients_in_meters())
-
-        additional = numpy.concatenate((warped, warped_binary_in_rgb, lines_drawn), axis=1)
-        additional = cv2.resize(additional, (1280, 240))
-        return numpy.concatenate((additional, main_track), axis=0)
+        return perspective_transform(polygon_drawn, inverse_perspective_tr_matrix)
 
     def _get_thresholded(self, image):
-        result = self._binary_model.predict(image.reshape(1, *image.shape)).squeeze() * 255
+        pass
+
+
+class SegmentationBasedLineDetector(LaneLineDetector):
+    def __init__(self, model):
+        super(SegmentationBasedLineDetector, self).__init__()
+        self._model = model
+
+    def _get_thresholded(self, image):
+        result = self._model.predict(image.reshape(1, *image.shape)).squeeze() * 255
         result = result.astype(numpy.uint8)
         result = cv2.adaptiveThreshold(result, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 7, 0)
         return result // 255
+
+
+class IntensityThresholdingLineDetector(LaneLineDetector):
+    def __init__(self):
+        super(IntensityThresholdingLineDetector, self).__init__()
+
+    def _get_thresholded(self, image):
+        yuv = cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
+        yellow_color = cv2.inRange(yuv[:, :, 1], array([0]), array([115]))
+        yellow_color[yellow_color != 0] = 1
+
+        hls = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
+        white_color = cv2.inRange(hls, array([0, 200, 0]), array([255, 255, 255]))
+        white_color[white_color != 0] = 1
+
+        out = numpy.zeros_like(white_color)
+        out[(white_color != 0) | (yellow_color != 0)] = 1
+        return out
+
+
+class VehicleDetector:
+    def __init__(self):
+        pass
+
+    def __call__(self, image):
+        pass
 
 
 if __name__ == '__main__':
