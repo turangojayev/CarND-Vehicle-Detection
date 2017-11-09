@@ -323,13 +323,5 @@ class IntensityThresholdingLineDetector(LaneLineDetector):
         return out
 
 
-class VehicleDetector:
-    def __init__(self):
-        pass
-
-    def __call__(self, image):
-        pass
-
-
 if __name__ == '__main__':
     pass

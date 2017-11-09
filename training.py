@@ -10,9 +10,10 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing.data import StandardScaler
 from sklearn.svm import LinearSVC
 
-from lesson_functions import color_hist, bin_spatial
-
 resize = cv2.resize
+histogram = numpy.histogram
+concatenate = numpy.concatenate
+
 training_pixels_per_cell = 8
 original_size = 64
 cells_per_block = 2
@@ -26,14 +27,19 @@ def get_data():
     notcars = glob.glob('data/non-vehicles/*/*.png')
 
     paths = numpy.concatenate((notcars, cars))
-    # X = numpy.array(
-    #     list(map(lambda x: cv2.cvtColor(cv2.imread(x), cv2.COLOR_BGR2RGB)
-    #     if 'Left' not in x else cv2.flip(cv2.cvtColor(cv2.imread(x), cv2.COLOR_BGR2RGB), flipCode=1), paths)))
 
     X = numpy.array(list(map(lambda x: cv2.cvtColor(cv2.imread(x), cv2.COLOR_BGR2RGB), paths)))
     y = numpy.array(([0] * len(notcars) + [1] * len(cars)))
     print(X.shape, y.shape)
     return X, y
+
+
+def color_hist(img, nbins=32):
+    channel1_hist = histogram(img[:, :, 0], bins=nbins)
+    channel2_hist = histogram(img[:, :, 1], bins=nbins)
+    channel3_hist = histogram(img[:, :, 2], bins=nbins)
+
+    return concatenate((channel1_hist[0], channel2_hist[0], channel3_hist[0]))
 
 
 def get_hog_features(img, orient, pix_per_cell, cell_per_block, vis=False, feature_vec=True):
