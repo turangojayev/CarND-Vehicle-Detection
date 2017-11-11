@@ -135,9 +135,9 @@ rectangle around each of them:
 
 The resulting videos can be found below: 
 
-[Project video](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/master/project_output-hog.mp4)
+[Project video](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/master/output_videos/project_output-hog.mp4)
 
-[Test video](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/master/test_output-hog.mp4)
+[Test video](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/master/output_videos/test_output-hog.mp4)
 
 ---
 
@@ -164,9 +164,9 @@ of course, speed was damaged (reduced to 3-4 fps). To overcome this problem, as 
 
 Here are the links two outputs made by CNN:
 
-[Project video](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/master/project_output-cnn.mp4)
+[Project video](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/master/output_videos/project_output-cnn.mp4)
 
-[Test video](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/master/test_output-cnn.mp4)
+[Test video](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/master/output_videos/test_output-cnn.mp4)
 
 [combo]: ./output_images/hqdefault.jpg
 I also [combined](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/master/combo.py) the pipeline for vehicle detection with a lane-line detection pipeline, and the resulting link on youtube is below 
