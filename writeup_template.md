@@ -33,8 +33,10 @@ The steps of this project are the following:
 [sliding_windows]: /output_images/sliding_windows.png
 [found_boxes]: /output_images/found_boxes.png
 [heatmaps]: /output_images/heatmaps.png
+[result]: /output_images/result.png
 
-[video1]: ./project_video.mp4
+[video1]: ./project_output-hog.mp4
+[video2]: /test_output-hog.mp4
 
 ---
 
@@ -115,10 +117,20 @@ Here is an example of the results of the classification for windows:
 
 ---
 
-### Video Implementation
+**Video Implementation**
 
-####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)
-Here's a [link to my video result](./project_video.mp4)
+As we can see from the image above, several overlapping windows can be classified as containing a car. For these cases as 
+well as for removing false positives, heatmaps can give a better representation:
+
+![heatmaps]
+
+I took a time for coming with a solution that finds minimal number of false positives. To keep the logic of post-processing
+as simple as possible I average the heatmaps from last 10 frames and apply a threshold of 0.6. The resulting videos can be found below: 
+
+![Project video](video1) https://github.com/turangojayev/CarND-Vehicle-Detection/blob/master/project_output-hog.mp4
+
+[Test video](video2) https://github.com/turangojayev/CarND-Vehicle-Detection/blob/master/test_output-hog.mp4
+
 
 
 ####2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
