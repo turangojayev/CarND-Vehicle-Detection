@@ -60,7 +60,7 @@ we are looking for. Below, HOG features are depicted both for car images and for
 
 ![not_cars_hog0]
 
-![not_cars_hog0]
+![not_cars_hog1]
 
 We can also check how HOG features look like for the whole images:
 
