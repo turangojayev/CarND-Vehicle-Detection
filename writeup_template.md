@@ -10,7 +10,8 @@ to spot the cars:
 
 Since the project rubric explicitly asks for the usage of sliding window and [HOG](https://en.wikipedia.org/wiki/Histogram_of_oriented_gradients) features 
 I have tried the first approach to solve this problem. I have never done image classification with manually created features before, therefore decided also to compare a classifier that utilizes
-these features against Convolutional Neural Networks.
+these features against Convolutional Neural Networks. Furthermore, one of my objectives was to make the processing of videos
+as fast as possible, without doing complicated post-processing after classification of the patches of images. 
 
 The steps of this project are the following:
 
@@ -37,44 +38,74 @@ The steps of this project are the following:
 
 ---
 
-###Histogram of Oriented Gradients (HOG)
+###Car vs Not Car
 
-####1. Explain how (and identify where in your code) you extracted HOG features from the training images.
+![cars]
 
-The code for this step is contained in the first code cell of the IPython notebook (or in lines # through # of the file called `some_file.py`).  
+![not_cars]
 
-I started by reading in all the `vehicle` and `non-vehicle` images.  Here is an example of one of each of the `vehicle` and `non-vehicle` classes:
+To decide if a given image depicts a car or not, we have to build a binary classifier. [Here](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/2302085cf756083bbf7847a23803f91013652f12/training.py#L67) I extract
+HOG features from images as well as color histograms, for making use of them in classification. I exploit HOG features obtained 
+from luma and blue difference channels of image converted to [YCbCr](https://en.wikipedia.org/wiki/YCbCr) color space. 
+I group gradients calculated over the 8x8 patches of the image into 9 orients and normalize the values for each 2x2 block. 
+Since it is a utilization of the gradients of the intensity values for pixels, these features help to spot the shape of the objects
+we are looking for. Below, HOG features are depicted both for car images and for the one not containing a car:
 
-![alt text][image1]
+![cars_hog_channel0]
 
-I then explored different color spaces and different `skimage.hog()` parameters (`orientations`, `pixels_per_cell`, and `cells_per_block`).  I grabbed random images from each of the two classes and displayed them to get a feel for what the `skimage.hog()` output looks like.
+![cars_hog_channel1]
 
-Here is an example using the `YCrCb` color space and HOG parameters of `orientations=8`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
+![not_cars_hog0]
+
+![not_cars_hog0]
+
+We can also check how HOG features look like for the whole images:
+
+![test_images]
+
+On luma channel of YCbCr color space
+
+![test_images_hog0]
+
+On blue difference channel ofYCbCr color space
+
+![test_images_hog1]
+
+Moreover, I deploy color histograms binned into 32 groups for each of the [HLS](https://en.wikipedia.org/wiki/HSL_and_HSV) color space channels.
+As a classifier model, I selected linear SVM and trained it with a class weight of 10 for "not car" and 1 for "car", with L2 regularization. 
+The reason of higher class weight for the "not car" is the uneven distribution of the classes in a real world scenario. The described approach 
+ results in accuracy of 0.990427927928 for test dataset (0.99 precision and 0.99 recall for both of the classes). 
+ 
+ Selected features are not a reflection of the performance of the classifier on the dataset. I found many different combinations that yielded
+ similar results on these data, but performed much poorer on videos (many more false positives). Therefore, during the selection of the features 
+ the stress was made on getting better results for the videos and on run time.
+ 
+ Classifier could probably be made even better, but already with HOG features for 2 channels and color histograms, the processing time was far from my goal for the project.
+ 
+        [MoviePy] >>>> Building video test_output-hog.mp4
+        [MoviePy] Writing video test_output-hog.mp4
+         97%|█████████▋| 38/39 [00:10<00:00,  3.46it/s]
+        [MoviePy] Done.
+        [MoviePy] >>>> Video ready: test_output-hog.mp4 
+ 
+
+        [MoviePy] >>>> Building video project_output-hog.mp4
+        [MoviePy] Writing video project_output-hog.mp4
+        100%|█████████▉| 1260/1261 [06:08<00:00,  3.47it/s]
+        [MoviePy] Done.
+        [MoviePy] >>>> Video ready: project_output-hog.mp4 
 
 
-![alt text][image2]
-
-####2. Explain how you settled on your final choice of HOG parameters.
-
-I tried various combinations of parameters and...
-
-####3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
-
-I trained a linear SVM using...
+[Here](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/2302085cf756083bbf7847a23803f91013652f12/training.py#L94)
+is the procedure for the training of the model.
 
 ###Sliding Window Search
+ Once we have a binary classifier, we can go over many positions on an image and try to spot a car. Since the cars can appear at different
+ distances from the camera, care should be taken for different sizes corresponding to these distances. 
+ 
+![sliding_windows]
 
-####1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
-I decided to search random window positions at random scales all over the image and came up with this (ok just kidding I didn't actually ;):
-
-![alt text][image3]
-
-####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
-
-Ultimately I searched on two scales using YCrCb 3-channel HOG features plus spatially binned color and histograms of color in the feature vector, which provided a nice result.  Here are some example images:
-
-![alt text][image4]
 ---
 
 ### Video Implementation

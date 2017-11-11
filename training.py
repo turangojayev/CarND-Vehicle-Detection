@@ -113,5 +113,5 @@ if __name__ == '__main__':
     X, y = get_data()
     pipeline = train(X, y)
 
-    with open('pipeline.pkl', 'wb') as f:
+    with open('svm_pipe.pkl', 'wb') as f:
         pickle.dump(pipeline, f)
