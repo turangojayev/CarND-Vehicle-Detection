@@ -1,4 +1,4 @@
-##Writeup Template
+**Writeup Template**
 ---
 
 **Vehicle Detection Project**
@@ -38,7 +38,7 @@ The steps of this project are the following:
 
 ---
 
-###Car vs Not Car
+**Car vs Not Car**
 
 ![cars]
 
@@ -99,7 +99,7 @@ The reason of higher class weight for the "not car" is the uneven distribution o
 [Here](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/2302085cf756083bbf7847a23803f91013652f12/training.py#L94)
 is the procedure for the training of the model.
 
-###Sliding Window Search
+**Sliding Window Search**
  Once we have a binary classifier, we can go over many positions on an image and try to spot a car. Since the cars can appear at different
  distances from the camera, care should be taken for different sizes corresponding to these distances. 
  
