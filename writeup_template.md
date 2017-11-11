@@ -125,33 +125,49 @@ well as for removing false positives, heatmaps can give a better representation:
 ![heatmaps]
 
 I took a time for coming with a solution that finds minimal number of false positives. To keep the logic of post-processing
-as simple as possible I average the heatmaps from last 10 frames and apply a threshold of 0.6. The resulting videos can be found below: 
+as simple as possible I average the heatmaps from last 10 frames and apply a threshold of 0.6. Code for this process can be found
+[here](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/fa0c3a71dc7010e0cef42bef193adbe9d2f86e80/vehicle_detection.py#L230). Afterwards,
+I use `scipy.ndimage.measurements.label()` to find blobs in the heatmap and assuming that they correspond to cars, I draw a
+rectangle around each of them:
 
-![Project video](video1) https://github.com/turangojayev/CarND-Vehicle-Detection/blob/master/project_output-hog.mp4
-
-[Test video](video2) https://github.com/turangojayev/CarND-Vehicle-Detection/blob/master/test_output-hog.mp4
-
-
-
-####2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
-
-I recorded the positions of positive detections in each frame of the video.  From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions.  I then used `scipy.ndimage.measurements.label()` to identify individual blobs in the heatmap.  I then assumed each blob corresponded to a vehicle.  I constructed bounding boxes to cover the area of each blob detected.  
-
-Here's an example result showing the heatmap from a series of frames of video, the result of `scipy.ndimage.measurements.label()` and the bounding boxes then overlaid on the last frame of video:
-
-### Here are six frames and their corresponding heatmaps:
-
-![alt text][image5]
-
-### Here is the output of `scipy.ndimage.measurements.label()` on the integrated heatmap from all six frames:
-![alt text][image6]
-
-### Here the resulting bounding boxes are drawn onto the last frame in the series:
-![alt text][image7]
+![result]
 
 
+The resulting videos can be found below: 
+
+[Project video](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/master/project_output-hog.mp4)
+
+[Test video](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/master/test_output-hog.mp4)
 
 ---
+
+**Too slow, what to do?**
+
+I have spent a lot of time trying to make SVM classifier work well on video file. I started with only HOG features and only
+for one channel, which was performing around 15 fps, however, finding a lot of false positives. By introducing more features,
+of course, speed was damaged. To overcome this problem, as well as to compare learning features from images with neural network against manually
+ created ones, I used very simple CNN consisting of two convolutional and two fully connected layers before the output layer as a classifier.
+ It runs much quicker(real-time) and results in almost zero false positives! 
+ 
+    [MoviePy] >>>> Building video test_output-cnn.mp4
+    [MoviePy] Writing video test_output-cnn.mp4
+     77%|███████▋  | 30/39 [00:00<00:00, 47.42it/s] 90%|████████▉ | 35/39 [00:00<00:00, 47.48it/s] 97%|█████████▋| 38/39 [00:00<00:00, 47.60it/s]
+    [MoviePy] Done.
+    [MoviePy] >>>> Video ready: test_output-cnn.mp4 
+    [MoviePy] >>>> Building video project_output-cnn.mp4
+    [MoviePy] Writing video project_output-cnn.mp4
+     99%|█████████▉| 1253/1261 [00:26<00:00, 46.22it/s]100%|█████████▉| 1258/1261 [00:27<00:00, 47.21it/s]100%|█████████▉| 1260/1261 [00:27<00:00, 46.44it/s]
+    [MoviePy] Done.
+    [MoviePy] >>>> Video ready: project_output-cnn.mp4 
+
+Here are the links two outputs made by CNN:
+
+[Project video](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/master/project_output-cnn.mp4)
+
+[Test video](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/master/test_output-cnn.mp4)
+
+[combo]: ./output_images/hqdefault.jpg
+I also combined the pipeline for vehicle detection with a lane-line detection pipeline, and the resulting video is ![combo](https://www.youtube.com/watch?v=nemEiZ-F5tM&feature=youtu.be)
 
 ###Discussion
 
