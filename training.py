@@ -2,6 +2,7 @@ import glob
 import pickle
 
 import cv2
+import os
 import numpy
 from skimage.feature import hog
 from sklearn.metrics.classification import classification_report
@@ -9,6 +10,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing.data import StandardScaler
 from sklearn.svm import LinearSVC
+import zipfile
 
 resize = cv2.resize
 histogram = numpy.histogram
@@ -23,8 +25,11 @@ spatial_bin_shape = (16, 16)
 
 
 def get_data():
-    cars = glob.glob('data/vehicles/*/*.png')
-    notcars = glob.glob('data/non-vehicles/*/*.png')
+    cars = [os.path.join('data', name) for name in zipfile.ZipFile('data/vehicles.zip').namelist() if
+            name.endswith('png')]
+
+    notcars = [os.path.join('data', name) for name in zipfile.ZipFile('data/non-vehicles.zip').namelist() if
+               name.endswith('png')]
 
     paths = numpy.concatenate((notcars, cars))
 
@@ -113,5 +118,5 @@ if __name__ == '__main__':
     X, y = get_data()
     pipeline = train(X, y)
 
-    with open('svm_pipe.pkl', 'wb') as f:
+    with open('car_models/svm_pipe.pkl', 'wb') as f:
         pickle.dump(pipeline, f)
