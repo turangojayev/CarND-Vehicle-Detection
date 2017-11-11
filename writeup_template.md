@@ -1,38 +1,41 @@
 ##Writeup Template
-###You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
-
 ---
 
 **Vehicle Detection Project**
 
-The goals / steps of this project are the following:
+The goal in this project is to detect and track the cars on the road. At least two different approaches can be used 
+to spot the cars:
+ * Using sliding window technique one can check many positions on an image for a car
+ * Try to tell the coordinates of objects in an image directy (e.g, [YOLO](https://arxiv.org/abs/1506.02640))
 
-* Perform a Histogram of Oriented Gradients (HOG) feature extraction on a labeled training set of images and train a classifier Linear SVM classifier
-* Optionally, you can also apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector. 
-* Note: for those first two steps don't forget to normalize your features and randomize a selection for training and testing.
-* Implement a sliding-window technique and use your trained classifier to search for vehicles in images.
-* Run your pipeline on a video stream (start with the test_video.mp4 and later implement on full project_video.mp4) and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
+Since the project rubric explicitly asks for the usage of sliding window and [HOG](https://en.wikipedia.org/wiki/Histogram_of_oriented_gradients) features 
+I have tried the first approach to solve this problem. I have never done image classification with manually created features before, therefore decided also to compare a classifier that utilizes
+these features against Convolutional Neural Networks.
+
+The steps of this project are the following:
+
+* Create a binary classifier for images (car vs. not car) using manually created features .
+* Implement a sliding window technique and use trained classifier to search for vehicles in images.
+* Run a pipeline on a video stream and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
 * Estimate a bounding box for vehicles detected.
 
 [//]: # (Image References)
-[image1]: ./examples/car_not_car.png
-[image2]: ./examples/HOG_example.jpg
-[image3]: ./examples/sliding_windows.jpg
-[image4]: ./examples/sliding_window.jpg
-[image5]: ./examples/bboxes_and_heat.png
-[image6]: ./examples/labels_map.png
-[image7]: ./examples/output_bboxes.png
+[cars]: ./output_images/car.png
+[not_cars]: ./output_images/not_car.png
+[cars_hog_channel0]: ./output_images/car:channel0.png
+[cars_hog_channel1]: ./output_images/car:channel1.png
+[not_cars_hog0]: ./output_images/not_car_hog:channel0.png
+[not_cars_hog1]: ./output_images/not_car_hog:channel1.png
+[test_images]: ./output_images/test_images.png
+[test_images_hog0]: ./output_images/test_images:channel0.png
+[test_images_hog1]: ./output_images/test_images:channel1.png
+[sliding_windows]: /output_images/sliding_windows.png
+[found_boxes]: /output_images/found_boxes.png
+[heatmaps]: /output_images/heatmaps.png
+
 [video1]: ./project_video.mp4
 
-## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
-###Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
-
 ---
-###Writeup / README
-
-####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.  [Here](https://github.com/udacity/CarND-Vehicle-Detection/blob/master/writeup_template.md) is a template writeup for this project you can use as a guide and a starting point.  
-
-You're reading it!
 
 ###Histogram of Oriented Gradients (HOG)
 

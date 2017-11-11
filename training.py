@@ -99,7 +99,6 @@ def train(X, y):
 
     pipeline = make_pipeline(
         StandardScaler(),
-        # LinearSVC(C=0.01, class_weight={0: 3, 1: 1})
         LinearSVC(C=0.01, class_weight={0: 10, 1: 1})
     )
 

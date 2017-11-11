@@ -58,8 +58,7 @@ def _create_samples_for_svm(image, search_param):
             xleft = xpos * training_pixels_per_cell
             ytop = ypos * training_pixels_per_cell
 
-            # subimg = cv2.resize(hlsed[ytop:ytop + original_size, xleft:xleft + original_size], (64, 64))
-            subimg = hlsed[ytop:ytop + original_size, xleft:xleft + original_size]
+            subimg = cv2.resize(hlsed[ytop:ytop + original_size, xleft:xleft + original_size], (64, 64))
             hist_features = color_hist(subimg, nbins=color_histogram_bins)
             samples.append(concatenate((hog_features, hist_features)))
 
@@ -154,7 +153,7 @@ class VehicleDetector:
         heat = self._get_heatmap(image.shape[:2], boxes)
         if self._debug == HEATMAP:
             zero = numpy.zeros(heat.shape)
-            return numpy.clip(numpy.dstack((heat, zero, zero)) * 10, 0, 255)
+            return numpy.clip(numpy.dstack((heat, zero, zero)) * 2, 0, 255)
 
         labels = label(heat)
         boundaries = _find_label_boundaries(labels)
@@ -310,15 +309,3 @@ if __name__ == '__main__':
                                ],
                                weight_for_new_frame=0.3
                            ))
-
-
-
-    # image = cv2.cvtColor(cv2.imread('test_images/test3.jpg'), cv2.COLOR_BGR2RGB)
-    # # image = Pipeline(vehicle_classifier=pickle.load(open('pipeline.pkl', 'rb')), debug=BOXES_WITH_CARS)(image)
-    # image = Pipeline(vehicle_classifier=pickle.load(open('pipeline.pkl', 'rb')), debug=BOXES_WITH_CARS)(image)
-    # import matplotlib.pyplot as plt
-    #
-    # print(image.shape)
-    # plt.imshow(image)
-    # plt.show()
-    # #
