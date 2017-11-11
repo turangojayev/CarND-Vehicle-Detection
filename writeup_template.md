@@ -44,7 +44,8 @@ The steps of this project are the following:
 
 ![not_cars]
 
-To decide if a given image depicts a car or not, we have to build a binary classifier. [Here](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/2302085cf756083bbf7847a23803f91013652f12/training.py#L67) I extract
+To decide if a given image depicts a car or not, we have to build a binary classifier. 
+[Here](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/e424f77f41c3d056683b1e77fc6a7f1978864a65/training.py#L67) I extract
 HOG features from images as well as color histograms, for making use of them in classification. I exploit HOG features obtained 
 from luma and blue difference channels of image converted to [YCbCr](https://en.wikipedia.org/wiki/YCbCr) color space. 
 I group gradients calculated over the 8x8 patches of the image into 9 orients and normalize the values for each 2x2 block. 
@@ -96,15 +97,21 @@ The reason of higher class weight for the "not car" is the uneven distribution o
         [MoviePy] >>>> Video ready: project_output-hog.mp4 
 
 
-[Here](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/2302085cf756083bbf7847a23803f91013652f12/training.py#L94)
+[Here](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/e424f77f41c3d056683b1e77fc6a7f1978864a65/training.py#L94)
 is the procedure for the training of the model.
 
 **Sliding Window Search**
+
  Once we have a binary classifier, we can go over many positions on an image and try to spot a car. Since the cars can appear at different
- distances from the camera, care should be taken for different sizes corresponding to these distances. 
+ distances from the camera, care should be taken for different sizes corresponding to these distances. I have used sliding window approach for
+  the scales of 1.5 and 2 (in pixesl 96 and 128 respectively). For both scales, I have made use of the rectangle area between 
+  with a height of 256 (400-656 of height) and used overlap of 75% between subsequent windows. The exploited area is plotted below:
  
 ![sliding_windows]
 
+Here is an example of the results of the classification for windows:
+
+![found_boxes]
 
 ---
 
