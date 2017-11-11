@@ -37,23 +37,23 @@ def _create_samples_for_svm(image, search_param):
                                 (numpy.int(imshape[1] / search_param.scale),
                                  numpy.int(imshape[0] / search_param.scale)))
 
-    nxblocks = (part_to_search.shape[1] // training_pixels_per_cell) - cells_per_block + 1
-    nyblocks = (part_to_search.shape[0] // training_pixels_per_cell) - cells_per_block + 1
-    nblocks_per_window = (original_size // training_pixels_per_cell) - cells_per_block + 1
-    nxsteps = (nxblocks - nblocks_per_window) // search_param.horizontal_step
-    nysteps = (nyblocks - nblocks_per_window) // search_param.vertical_step
+    num_horizontal_blocks = (part_to_search.shape[1] // training_pixels_per_cell) - cells_per_block + 1
+    num_vertical_blocks = (part_to_search.shape[0] // training_pixels_per_cell) - cells_per_block + 1
+    blocks_per_window = (original_size // training_pixels_per_cell) - cells_per_block + 1
+    num_horizontal_steps = (num_horizontal_blocks - blocks_per_window) // search_param.horizontal_step
+    num_vertical_steps = (num_vertical_blocks - blocks_per_window) // search_param.vertical_step
 
     hog1, hog2, hlsed = preprocess(part_to_search, False, False)
 
     samples = []
-    for xb in range(nxsteps):
-        for yb in range(nysteps):
+    for xb in range(num_horizontal_steps):
+        for yb in range(num_vertical_steps):
             ypos = yb * search_param.vertical_step
             xpos = xb * search_param.horizontal_step
 
             hog_features = numpy.concatenate((
-                hog1[ypos:ypos + nblocks_per_window, xpos:xpos + nblocks_per_window].ravel(),
-                hog2[ypos:ypos + nblocks_per_window, xpos:xpos + nblocks_per_window].ravel()))
+                hog1[ypos:ypos + blocks_per_window, xpos:xpos + blocks_per_window].ravel(),
+                hog2[ypos:ypos + blocks_per_window, xpos:xpos + blocks_per_window].ravel()))
 
             xleft = xpos * training_pixels_per_cell
             ytop = ypos * training_pixels_per_cell

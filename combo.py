@@ -1,20 +1,18 @@
 import glob
-import os
-from functools import partial
 
 import cv2
 import keras
 import numpy
 import tensorflow as tf
 from keras.layers import *
-from matplotlib import pyplot as plt
-from moviepy.video.io.VideoFileClip import VideoFileClip
+
+from vehicle_detection import _draw_boxes_on, process_and_save_video, CNNVehicleDetector, search_parameter
 
 COLUMNS = 9
 ROWS = 6
 rows = 720
 columns = 1280
-#
+
 src = numpy.float32([[0, 700],
                      [515, 472],
                      [764, 472.],
@@ -24,12 +22,6 @@ dst = numpy.float32([[100, 710],
                      [100, 10],
                      [1180, 10],
                      [1180, 710]])
-
-font = cv2.FONT_HERSHEY_SIMPLEX
-position = (10, 100)
-fontScale = 1
-fontColor = (0, 0, 255)
-lineType = 2
 
 ym_per_pix = 3. / 72
 xm_per_pix = 3.7 / 700
@@ -236,46 +228,23 @@ def _draw_polygon(y, left_x, right_x, shape):
     return cv2.fillPoly(color_warp, numpy.int_([pts]), (0, 255, 0))
 
 
-def _put_text(image, distance_from_center, left_coeffs_m, right_coeffs_m):
-    left_curverad = (1 + (2 * left_coeffs_m[0] * 720 * ym_per_pix + left_coeffs_m[1]) ** 2) ** 1.5 / \
-                    numpy.absolute(2 * left_coeffs_m[0])
-
-    right_curverad = (1 + (2 * right_coeffs_m[0] * 720 * ym_per_pix + right_coeffs_m[1]) ** 2) ** 1.5 / \
-                     numpy.absolute(2 * right_coeffs_m[0])
-
-    cv2.putText(image, 'left: {}'.format(left_curverad), position, font, fontScale, fontColor, lineType)
-
-    cv2.putText(image, 'right: {}'.format(right_curverad), (position[0], position[1] + 40),
-                font, fontScale, fontColor, lineType)
-
-    cv2.putText(image, 'dist. to center: {}'.format(xm_per_pix * distance_from_center),
-                (position[0], position[1] + 80), font, fontScale, fontColor, lineType)
-
-    return image
-
-
-def _add_rectangles():
-    pass
-
-
-def _add_polygon():
-    pass
-
-
 class Pipeline:
-    def __init__(self, vehicle_detector, lane_line_detector=None):
+    def __init__(self, vehicle_detector, lane_line_detector):
         self._camera_matrix, self._distortion_coefs = get_calibration_results()
         self._vehicle_detector = vehicle_detector
         self._lane_line_detector = lane_line_detector
 
     def __call__(self, image):
-        if self._lane_line_detector is not None:
-            image = undistort(image, self._camera_matrix, self._distortion_coefs, None, None)
+        image = undistort(image, self._camera_matrix, self._distortion_coefs, None, None)
 
         boxes = self._vehicle_detector(image)
+        if isinstance(boxes, numpy.ndarray):
+            raise TypeError('List of tuples was expected, but instead got \'numpy.ndarray\', '
+                            'instantiate vehicle_detector with return_boundaries=True')
 
-        if self._lane_line_detector is not None:
-            fitted_polygon = self._lane_line_detector(image)
+        unwarped = self._lane_line_detector(image)
+        image = cv2.addWeighted(image, 1, unwarped, 0.5, 0)
+        return _draw_boxes_on(boxes, image)
 
 
 class LaneLineDetector:
@@ -324,4 +293,19 @@ class IntensityThresholdingLineDetector(LaneLineDetector):
 
 
 if __name__ == '__main__':
-    pass
+    process_and_save_video('project_video.mp4', 'combo-cnn.mp4',
+                           Pipeline(
+                               CNNVehicleDetector(
+                                   vehicle_classifier=keras.models.load_model('car_models/model-28-0.995.h5'),
+                                   search_params=[
+                                       search_parameter(1.5, 0.5, 0.5, 400, 464),
+                                       search_parameter(2, 0.5, 0.5, 400, 592),
+                                   ],
+                                   weight_for_new_frame=0.3,
+                                   return_boundaries=True
+                               ),
+                               # SegmentationBasedLineDetector(
+                               #     keras.models.load_model('model.h5',
+                               #                             custom_objects={'Upsampling': Upsampling}))
+                               IntensityThresholdingLineDetector()
+                           ))
