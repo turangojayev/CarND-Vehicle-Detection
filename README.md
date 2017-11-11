@@ -147,7 +147,9 @@ I have spent a lot of time trying to make SVM classifier work well on video file
 to judge how it will perform on videos. Despite very high results on datasets(no overfitting!), the models kept performing poorly on video. I started with only HOG features and only for one channel, which was performing around 15 fps, however, finding a lot of false positives. By introducing more features,
 of course, speed was damaged (reduced to 3-4 fps). To overcome this problem, as well as to compare learning features from images with neural network against manually
  created ones, I used very simple CNN consisting of two convolutional and two fully connected layers before the output layer as a classifier.
- It runs much quicker(real-time) and results in almost zero false positives! 
+ It runs much quicker(real-time) and results in almost zero false positives. To remove rest of them and to make the pipeline to
+ show the car position also on frames, where a car was not detected, I calculate all the sliding window positions ahead of time and 
+ use running average of the probabilities for the window positions ([here](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/ec650d6e3162bd6e8fa0c1c767a060a1e899502f/vehicle_detection.py#L272)).
  
     [MoviePy] >>>> Building video test_output-cnn.mp4
     [MoviePy] Writing video test_output-cnn.mp4
