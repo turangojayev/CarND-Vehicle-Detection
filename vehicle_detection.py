@@ -277,7 +277,7 @@ class CNNVehicleDetector(VehicleDetector):
 
 if __name__ == '__main__':
     process_and_save_video('test_video.mp4', 'test_output-hog.mp4',
-                           SVMVehicleDetector(vehicle_classifier=pickle.load(open('svm_pipe.pkl', 'rb')),
+                           SVMVehicleDetector(vehicle_classifier=pickle.load(open('car_models/svm_pipe.pkl', 'rb')),
                                               search_params=[
                                                   search_parameter(1.5, 2, 2, 400, 656),
                                                   search_parameter(2, 2, 2, 400, 656),
@@ -294,7 +294,7 @@ if __name__ == '__main__':
                            ))
 
     process_and_save_video('project_video.mp4', 'project_output-hog.mp4',
-                           SVMVehicleDetector(vehicle_classifier=pickle.load(open('svm_pipe.pkl', 'rb')),
+                           SVMVehicleDetector(vehicle_classifier=pickle.load(open('car_models/svm_pipe.pkl', 'rb')),
                                               search_params=[
                                                   search_parameter(1.5, 2, 2, 400, 656),
                                                   search_parameter(2, 2, 2, 400, 656),

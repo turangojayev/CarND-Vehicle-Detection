@@ -305,7 +305,7 @@ if __name__ == '__main__':
                                    return_boundaries=True
                                ),
                                # SegmentationBasedLineDetector(
-                               #     keras.models.load_model('model.h5',
+                               #     keras.models.load_model('car_models/model.h5',
                                #                             custom_objects={'Upsampling': Upsampling}))
                                IntensityThresholdingLineDetector()
                            ))
