@@ -276,14 +276,14 @@ class CNNVehicleDetector(VehicleDetector):
 
 
 if __name__ == '__main__':
-    process_and_save_video('test_video.mp4', 'test_output-hog.mp4',
+    process_and_save_video('test_video.mp4', 'output_videos/test_output-hog.mp4',
                            SVMVehicleDetector(vehicle_classifier=pickle.load(open('car_models/svm_pipe.pkl', 'rb')),
                                               search_params=[
                                                   search_parameter(1.5, 2, 2, 400, 656),
                                                   search_parameter(2, 2, 2, 400, 656),
                                               ]))
 
-    process_and_save_video('test_video.mp4', 'test_output-cnn.mp4',
+    process_and_save_video('test_video.mp4', 'output_videos/test_output-cnn.mp4',
                            CNNVehicleDetector(
                                vehicle_classifier=keras.models.load_model('car_models/model-28-0.995.h5'),
                                search_params=[
@@ -293,14 +293,14 @@ if __name__ == '__main__':
                                weight_for_new_frame=0.3
                            ))
 
-    process_and_save_video('project_video.mp4', 'project_output-hog.mp4',
+    process_and_save_video('project_video.mp4', 'output_videos/project_output-hog.mp4',
                            SVMVehicleDetector(vehicle_classifier=pickle.load(open('car_models/svm_pipe.pkl', 'rb')),
                                               search_params=[
                                                   search_parameter(1.5, 2, 2, 400, 656),
                                                   search_parameter(2, 2, 2, 400, 656),
                                               ]))
 
-    process_and_save_video('project_video.mp4', 'project_output-cnn.mp4',
+    process_and_save_video('project_video.mp4', 'output_videos/project_output-cnn.mp4',
                            CNNVehicleDetector(
                                vehicle_classifier=keras.models.load_model('car_models/model-28-0.995.h5'),
                                search_params=[

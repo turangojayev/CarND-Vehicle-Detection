@@ -293,7 +293,7 @@ class IntensityThresholdingLineDetector(LaneLineDetector):
 
 
 if __name__ == '__main__':
-    process_and_save_video('project_video.mp4', 'combo-cnn.mp4',
+    process_and_save_video('project_video.mp4', 'output_videos/combo-cnn.mp4',
                            Pipeline(
                                CNNVehicleDetector(
                                    vehicle_classifier=keras.models.load_model('car_models/model-28-0.995.h5'),

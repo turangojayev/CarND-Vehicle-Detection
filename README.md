@@ -35,8 +35,8 @@ The steps of this project are the following:
 [heatmaps]: /output_images/heatmaps.png
 [result]: /output_images/result.png
 
-[video1]: ./project_output-hog.mp4
-[video2]: /test_output-hog.mp4
+[video1]: output_videos/project_output-hog.mp4
+[video2]: /output_videos/test_output-hog.mp4
 
 ---
 
