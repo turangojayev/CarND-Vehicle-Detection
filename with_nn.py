@@ -1,4 +1,5 @@
-import glob
+import os
+import zipfile
 
 import cv2
 import numpy
@@ -12,8 +13,11 @@ from sklearn.model_selection import train_test_split
 
 
 def get_data():
-    cars = glob.glob('data/vehicles/*/*.png')
-    notcars = glob.glob('data/non-vehicles/*/*.png')
+    cars = [os.path.join('data', name) for name in zipfile.ZipFile('data/vehicles.zip').namelist() if
+            name.endswith('png')]
+
+    notcars = [os.path.join('data', name) for name in zipfile.ZipFile('data/non-vehicles.zip').namelist() if
+               name.endswith('png')]
 
     paths = numpy.concatenate((notcars, cars))
     X = numpy.array(list(map(lambda x: cv2.cvtColor(cv2.imread(x), cv2.COLOR_BGR2RGB), paths)))
