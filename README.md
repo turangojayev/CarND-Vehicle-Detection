@@ -143,8 +143,8 @@ The resulting videos can be found below:
 
 **Too slow, what to do?**
 
-I have spent a lot of time trying to make SVM classifier work well on video file. I started with only HOG features and only
-for one channel, which was performing around 15 fps, however, finding a lot of false positives. By introducing more features,
+I have spent a lot of time trying to make SVM classifier work well on video file. Accuracy, recall and precision of the classifier are not sufficient
+to judge how it will perform on videos. Despite very high results on datasets(no overfitting!), the models kept performing poorly on video. I started with only HOG features and only for one channel, which was performing around 15 fps, however, finding a lot of false positives. By introducing more features,
 of course, speed was damaged (reduced to 3-4 fps). To overcome this problem, as well as to compare learning features from images with neural network against manually
  created ones, I used very simple CNN consisting of two convolutional and two fully connected layers before the output layer as a classifier.
  It runs much quicker(real-time) and results in almost zero false positives! 
@@ -172,5 +172,5 @@ I also [combined](https://github.com/turangojayev/CarND-Vehicle-Detection/blob/m
 [![combo]](https://www.youtube.com/watch?v=nemEiZ-F5tM&feature=youtu.be)
 
 That being said, there are still lots of problems with sliding windows approach. It requires many steps over one frame,
-what reduces the speed of processing. Moreover, several scales for windows should be selected to make detection smoother (which will again drop the speed). If manually constructed features are being used, it results in a false positives as well as further speed reduce. Although I have used CNNs to do binary classification with sliding window
+what reduces the speed of processing. Moreover, several scales for windows should be selected to make detection smoother (which will again drop the speed). If manually constructed features are being used, it results in false positives as well as further speed reduce. Although I have used CNNs to do binary classification with sliding window
  approach, it can be replaced by an approach like YOLO, where each frame is fed to neural network once and coordinates found directly. 
